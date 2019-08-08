@@ -153,7 +153,6 @@ fi
                     string defaultValue: 'https://ocp.itaas.s2-eu.capgemini.com', description: 'Openshift url', name: 'OC_URL', trim: true
                     string defaultValue: 's2portaldev', description: 'Openshift project', name: 'OC_PROJECT', trim: true
                     credentials credentialType: 'com.openshift.jenkins.plugins.OpenShiftTokenCredentials', description: 'The openshift auth token. You can get it with the command: oc whoami -t', name: 'OC_TOKEN', required: true
-                    string defaultValue: '', description: 'Openshift project', name: 'OC_PROJECT', trim: true
                     credentials(credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'nexus-devon', description: 'Nexus registry integration user credentials', name: 'DOCKER_REGISTRY_CREDENTIALS', required: true)
                 }
             }
