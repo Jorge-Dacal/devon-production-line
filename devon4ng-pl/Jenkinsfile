@@ -26,12 +26,17 @@ pipeline{
         choice choices: ['none', 'docker', 'openshift'], description: 'Choose the environment where you want to deploy', name: 'DEPLOY'
         
     }
+
+    environment {
+        PORT='8080'
+    }
     
     stages {
         stage('PL setup') {
             steps{
                 script{
-                    PROJECT_NAME_FULL = params.PROJECT_NAME + "-frontend"                
+                    PROJECT_NAME_FULL = params.PROJECT_NAME + "-frontend"
+                    SECRET
 
                     println "Trying to install all required plugins"
                     //Install the required Jenkins plugins
@@ -143,13 +148,20 @@ fi
                 equals expected: 'openshift', actual: params.DEPLOY
             }
             input {
-                message 'Introduce the docker host'
+                message 'Introduce the openshift host'
                 parameters {
                     string defaultValue: 'default', description: 'Openshift configuration name', name: 'OC_NAME', trim: true
                     string defaultValue: 'https://ocp.itaas.s2-eu.capgemini.com', description: 'Openshift url', name: 'OC_URL', trim: true
                     string defaultValue: 's2portaldev', description: 'Openshift project', name: 'OC_PROJECT', trim: true
                     credentials credentialType: 'com.openshift.jenkins.plugins.OpenShiftTokenCredentials', description: 'The openshift auth token. You can get it with the command: oc whoami -t', name: 'OC_TOKEN', required: true
+                    string defaultValue: '', description: 'Openshift project', name: 'OC_PROJECT', trim: true
+                    credentials(credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'nexus-devon', description: 'Nexus registry integration user credentials', name: 'DOCKER_REGISTRY_CREDENTIALS', required: true)
                 }
+            }
+            environment {
+                NGINX_TAG='alpine-perl'
+                CPU='100m'
+                MEMORY='200Mi'
             }
             tools {
                 oc 'OpenShiftv3.11.0'
@@ -161,14 +173,29 @@ fi
                     env.OC_URL = OC_URL
                     env.OC_PROJECT = OC_PROJECT
 
-                    def template = httpRequest consoleLogResponseBody: true, httpMode: 'GET', url: "http://gitlab-core:80/gitlab/darrodri/devonfw-shop-floor/raw/feature/devon4ng-template/dsf4openshift/openshift-devonfw-deployment/templates/devon4ng.json"
+                    // def template = httpRequest consoleLogResponseBody: true, httpMode: 'GET', url: "http://gitlab-core:80/gitlab/darrodri/devonfw-shop-floor/raw/feature/devon4ng-template/dsf4openshift/openshift-devonfw-deployment/templates/devon4ng.json"
+                    def template = httpRequest consoleLogResponseBody: true, httpMode: 'GET', url: "https://raw.githubusercontent.com/devonfw/devonfw-shop-floor/develop/dsf4openshift/configure-environments/devon4ng/devon4ng.yaml"
 
                     sh """echo '${template.getContent()}' > template.json """
                     sh """chmod 777 template.json """
 
+                    env.SECRET_NAME = "docker-registry-" + env.PL_URL.split("\\.")[0]
+
                     openshift.withCluster('default'){
                         openshift.withProject(env.OC_PROJECT) {
-                            openshift.create( openshift.process( '', '-f', 'template.json', "-p", "APPLICATION_NAME=${PROJECT_NAME}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME}", "-p", "DOCKER_TAG=latest", "-p", "CPU_LIMIT=200m", "-p", "MEMORY_LIMIT=500Mi"  ) )
+                            // Create secret if not exist
+                            def secret = openshift.selector('secret', "${env.SECRET_NAME}")
+                            if (!secret.exists()) {
+                                echo "secret not exist"
+                                withCredentials([usernamePassword(credentialsId: "${DOCKER_REGISTRY_CREDENTIALS}", passwordVariable: 'drpass', usernameVariable: 'druser')]) {
+                                    openshift.create('secret', "docker-registry ${env.SECRET_NAME} --docker-server=docker-registry-${env.PL_URL} --docker-username=${druser} --docker-password=${drpass} --docker-email=no-reply@email.com")
+                                }
+                            }
+
+                            // Create environments for dev, uat and prod
+                            openshift.create( openshift.process( '', '-f', 'template.json', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'template.json', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=uat", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'template.json', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=0.0.0", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
                         }
                     }
                 }
@@ -269,15 +296,12 @@ fi
         
         stage('Create cicdgen Angular template') {
             steps{
-                script{
-                    PL_NAME = sh(returnStdout: true, script: "curl -v -H 'Content-Type: application/json' -H 'Authorization: $MICROPORTAL_TOKEN' 'http://microportal:8080/api/metadata' | jq -r '.engagementname'")   
-                    PL_NAME = PL_NAME.trim()   
-                    
+                script{ 
                     def dockerString = ''
                     def ocString = ''
 
                     if (params.DEPLOY == 'docker'){
-                        dockerString = "--docker --plurl ${PL_URL} "
+                        dockerString = "--docker --plurl ${env.PL_URL} "
                     }
 
                     if (params.DEPLOY == 'openshift'){
