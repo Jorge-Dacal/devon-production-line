@@ -36,7 +36,6 @@ pipeline{
             steps{
                 script{
                     PROJECT_NAME_FULL = params.PROJECT_NAME + "-frontend"
-                    SECRET
 
                     println "Trying to install all required plugins"
                     //Install the required Jenkins plugins
