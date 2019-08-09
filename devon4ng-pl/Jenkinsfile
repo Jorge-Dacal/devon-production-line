@@ -19,7 +19,7 @@ pipeline{
         string(name: 'PROJECT_NAME', defaultValue: 'devonfw', description: 'Name of the project. The word "-frontend" will be appended.') 
         string(name: 'GROUP_ID', defaultValue: 'com.devonfw', description: 'The group id of the project.') 
         credentials(credentialType: 'com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl', defaultValue: 'gitlab-api-token', description: 'NEEDS TO BE SET!. Private Token of a Production Line Gitlab User that can be used to create repositories.', name: 'GITLAB_USER_PRIVATE_TOKEN', required: true)
-        string(name: 'GITLAB_USER_PRIVATE_TOKEN', defaultValue: 'wzsJ2ovaaspLZDe8_eL8', description: 'NEEDS TO BE SET!. Private Token of a Production Line Gitlab User that can be used to create repositories.') 
+        // string(name: 'GITLAB_USER_PRIVATE_TOKEN', defaultValue: 'wzsJ2ovaaspLZDe8_eL8', description: 'NEEDS TO BE SET!. Private Token of a Production Line Gitlab User that can be used to create repositories.') 
         string(name: 'GITLAB_CREATE_GROUP_NAME', defaultValue: 'devon', description: 'Name of the group that will be created inside GitLab to clone the repo.') 
         // string(name: 'GITLAB_CREATE_BRANCH', defaultValue: 'master', description: 'Branch') 
         string(name: 'GITLAB_CREATE_PROJECT_DESCRIPTION', defaultValue: 'Devon for angular PL template', description: 'Description of the repository.')
