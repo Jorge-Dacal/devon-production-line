@@ -171,12 +171,15 @@ fi
                     env.OC_URL = OC_URL
                     env.OC_PROJECT = OC_PROJECT
 
+                    /*
                     // def template = httpRequest consoleLogResponseBody: true, httpMode: 'GET', url: "http://gitlab-core:80/gitlab/darrodri/devonfw-shop-floor/raw/feature/devon4ng-template/dsf4openshift/openshift-devonfw-deployment/templates/devon4ng.json"
                     def template = httpRequest consoleLogResponseBody: true, httpMode: 'GET', url: "https://raw.githubusercontent.com/devonfw/devonfw-shop-floor/develop/dsf4openshift/configure-environments/devon4ng/devon4ng.json"
 
                     // sh """echo '${template.getContent()}' > template.json """
                     writeJSON file: 'template.json', json: template
                     sh """chmod 777 template.json """
+                    */
+                    sh """wget https://raw.githubusercontent.com/devonfw/devonfw-shop-floor/develop/dsf4openshift/configure-environments/devon4ng/devon4ng.yaml"""
 
                     env.SECRET_NAME = "docker-registry-" + env.PL_URL.split("\\.")[0]
 
@@ -192,9 +195,9 @@ fi
                             }
 
                             // Create environments for dev, uat and prod
-                            openshift.create( openshift.process( '', '-f', 'template', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'template', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=uat", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'template', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=0.0.0", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4ng.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4ng.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=uat", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4ng.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=0.0.0", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
                         }
                     }
                 }
