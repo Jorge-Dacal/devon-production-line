@@ -325,19 +325,9 @@ fi
             steps{
                 script {
                     dir(PROJECT_NAME_FULL){
-                        /*
-                        withCredentials([usernamePassword(credentialsId: params.GITLAB_CREDENTIALS, passwordVariable: 'gitlab_password', usernameVariable: 'gitlab_user')]) {
-                            sh "git status && git remote add origin http://${gitlab_user}:${gitlab_password}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
-                        }
-                        */
-                        withCredentials([[
-                            $class: 'com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl',
-                            credentialsId: 'GITLAB_USER_PRIVATE_TOKEN',
-                            variable: 'GITLAB_API_TOKEN'
-                        ]]) {
-                            sh "git status && git remote add origin http://oauth2:${GITLAB_API_TOKEN}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
-                            sh "git checkout -b develop && git push --set-upstream origin develop"
-                        }
+                        def token = jenkinsConfiguration.gitlabApiToken(GITLAB_USER_PRIVATE_TOKEN);
+                        sh "git status && git remote add origin http://oauth2:${token}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
+                        sh "git checkout -b develop && git push --set-upstream origin develop"
                     }    
                 }
             }
