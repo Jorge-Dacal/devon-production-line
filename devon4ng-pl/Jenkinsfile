@@ -3,9 +3,7 @@
 import com.capgemini.productionline.configuration.*
 
 JenkinsConfiguration jenkinsConfiguration = new JenkinsConfiguration(this);
-GitLab gitlabConfiguration = new GitLab(this, params.GITLAB_USER_PRIVATE_TOKEN, ProductionLineGlobals.GITLAB_BASE_URL);
-
- 
+GitLab gitlabConfiguration;
 
 pipeline{
 
@@ -25,7 +23,6 @@ pipeline{
         string(name: 'GITLAB_CREATE_PROJECT_DESCRIPTION', defaultValue: 'Devon for angular PL template', description: 'Description of the repository.')
         // credentials(credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'gitlab-user', description: 'Gitlab integration user credentials', name: 'GITLAB_CREDENTIALS', required: true)
         choice choices: ['none', 'docker', 'openshift'], description: 'Choose the environment where you want to deploy', name: 'DEPLOY'
-        
     }
 
     environment {
@@ -209,6 +206,10 @@ fi
             steps{
                 script{
                     println "Trying to create gitlab group"
+                    // Get GitLab Token and define GitLab configuration.
+                    def token = jenkinsConfiguration.gitlabApiToken(GITLAB_USER_PRIVATE_TOKEN);
+                    gitlabConfiguration = new GitLab(this, token, ProductionLineGlobals.GITLAB_BASE_URL);
+
                     //Check if group already exists
                     if(gitlabConfiguration.getGroupId(params.GITLAB_CREATE_GROUP_NAME) == ""){
                         println "No group existing yet, trying to create"
@@ -329,8 +330,14 @@ fi
                             sh "git status && git remote add origin http://${gitlab_user}:${gitlab_password}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
                         }
                         */
-                        sh "git status && git remote add origin http://oauth2:${gitlab_password}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
-                        sh "git checkout -b develop && git push --set-upstream origin develop"
+                        withCredentials([[
+                            $class: 'com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl',
+                            credentialsId: 'GITLAB_USER_PRIVATE_TOKEN',
+                            variable: 'GITLAB_API_TOKEN'
+                        ]]) {
+                            sh "git status && git remote add origin http://oauth2:${GITLAB_API_TOKEN}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
+                            sh "git checkout -b develop && git push --set-upstream origin develop"
+                        }
                     }    
                 }
             }
