@@ -281,7 +281,7 @@ fi
         }     
         stage('nest new') {
             steps{
-                sh 'nest new ${PROJECT_NAME_FULL} -s -p yarn'
+                sh "nest new ${PROJECT_NAME_FULL} -s -p yarn"
             }
         }       
         stage('Create cicdgen Node template') {
