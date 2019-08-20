@@ -3,7 +3,7 @@
 import com.capgemini.productionline.configuration.*
 
 Jenkins jenkinsConfiguration = new Jenkins();
-GitLab gitlabConfiguration = new GitLab(this, params.GITLAB_USER_PRIVATE_TOKEN, ProductionLineGlobals.GITLAB_BASE_URL);
+GitLab gitlabConfiguration;
 
 pipeline{
     agent any
@@ -39,7 +39,7 @@ pipeline{
                     pluginsToInstall = ["http_request", "job-dsl", "pipeline-maven", "NodeJS+Plugin", "GitLab+Plugin"]
 
                     // To deploy at docker, some extra plugins are required
-                    if (params.DEPLOY == "docker" || params.DEPLOY == "openshift"){
+                    if (params.DEPLOY == "docker"){
                         pluginsToInstall << "Docker+Plugin" << "Docker+build+step+plugin" << "Docker+Pipeline+Plugin" << "JClouds+Plugin"
                     }
 
