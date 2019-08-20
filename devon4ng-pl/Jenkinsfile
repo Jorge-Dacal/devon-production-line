@@ -38,7 +38,7 @@ pipeline{
                     println "Trying to install all required plugins"
                     //Install the required Jenkins plugins
                     //The template currently requires the following plugins to be present
-                    pluginsToInstall = ["http_request", "job-dsl", "pipeline-maven", "NodeJS+Plugin"]
+                    pluginsToInstall = ["http_request", "job-dsl", "pipeline-maven", "NodeJS+Plugin", "GitLab+Plugin"]
 
                     // To deploy at docker, some extra plugins are required
                     if (params.DEPLOY == "docker" || params.DEPLOY == "openshift"){
@@ -229,7 +229,7 @@ fi
                             PROJECT_NAME_FULL, 
                             PROJECT_NAME_FULL, 
                             params.GITLAB_CREATE_PROJECT_DESCRIPTION, 
-                            "master", 
+                            "develop", 
                             "public"
                         )
                     } else {
@@ -316,7 +316,7 @@ fi
                         sh 'git config user.email "jenkins-pl@capgemini.com"'
                         sh 'git config user.name "Jenkins"'
                         sh "cicdgen generate devon4ng ${ocString}${dockerString}--groupid ${params.GROUP_ID}"
-                    }
+                    }   
                 }
             }
         }
@@ -326,11 +326,23 @@ fi
                 script {
                     dir(PROJECT_NAME_FULL){
                         def token = jenkinsConfiguration.gitlabApiToken(GITLAB_USER_PRIVATE_TOKEN);
-                        sh "git status && git remote add origin http://oauth2:${token}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git && git push --set-upstream origin master"
+                        sh "git status && git remote add origin http://oauth2:${token}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git"
                         sh "git checkout -b develop && git push --set-upstream origin develop"
+                        sh "git checkout master && git push origin master"
+                        gitlabConfiguration.protectBranches(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "master", "40", "30");
+                        gitlabConfiguration.unprotectBranch(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "develop");
+                        gitlabConfiguration.protectBranches(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "develop", "30", "30");
+                        gitlabConfiguration.protectBranches(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "release/*", "40", "30");
                     }    
                 }
             }
+        }
+    }
+
+    post{
+        always{
+            cleanWs()
+            deleteDir()
         }
     }
 }
