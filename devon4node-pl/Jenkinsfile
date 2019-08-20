@@ -8,7 +8,7 @@ GitLab gitlabConfiguration;
 pipeline{
     agent any
 
-  tools {
+    tools {
         nodejs "NodeJS LTS"
     }
     //Jenkins Job Parameters
@@ -19,7 +19,7 @@ pipeline{
         string(name: 'GROUP_ID', defaultValue: 'com.devonfw', description: 'The group id of the project.') 
         credentials(credentialType: 'com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl', defaultValue: 'gitlab-api-token', description: 'NEEDS TO BE SET!. Private Token of a Production Line Gitlab User that can be used to create repositories.', name: 'GITLAB_USER_PRIVATE_TOKEN', required: true)
         string(name: 'GITLAB_CREATE_GROUP_NAME', defaultValue: 'devon', description: 'Name of the group that will be created inside GitLab to clone the repo.') 
-        string(name: 'GITLAB_CREATE_PROJECT_DESCRIPTION', defaultValue: 'Devon for angular PL template', description: 'Description of the repository.')
+        string(name: 'GITLAB_CREATE_PROJECT_DESCRIPTION', defaultValue: 'Devon for node PL template', description: 'Description of the repository.')
         choice choices: ['none', 'docker', 'openshift'], description: 'Choose the environment where you want to deploy', name: 'DEPLOY'    
     }
 
@@ -62,8 +62,8 @@ pipeline{
                     //Add nodejs
                     //public boolean addNodeJS_Version(String installName, String nodeJS_Version, String npmPackages="", String home="", long npmPackagesRefreshHours=100) {
                     println "Trying to install nodejs config"
-                    String installName = "NodeJS 10.14.0"
-                    String nodeJS_Version = "10.14.0"
+                    String installName = "NodeJS 10.16.0"
+                    String nodeJS_Version = "10.16.0"
                     String npmPackages = "yarn"
                     String home = ""
                     long npmPackagesRefreshHours = 100
@@ -153,7 +153,7 @@ fi
                 }
             }
             environment {
-                NGINX_TAG='alpine-perl'
+                NODE_TAG='10.16'
                 CPU='100m'
                 MEMORY='200Mi'
             }
@@ -184,9 +184,9 @@ fi
                             }
 
                             // Create environments for dev, uat and prod
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=release", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-prod", "-p", "NGINX_TAG=${NGINX_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=production", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=release", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-prod", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=production", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
                         }
                     }
                 }
