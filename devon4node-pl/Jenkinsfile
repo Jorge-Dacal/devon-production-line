@@ -2,7 +2,7 @@
 
 import com.capgemini.productionline.configuration.*
 
-Jenkins jenkinsConfiguration = new Jenkins();
+JenkinsConfiguration jenkinsConfiguration = new JenkinsConfiguration(this);
 GitLab gitlabConfiguration;
 
 pipeline{
