@@ -260,7 +260,7 @@ fi
                     println "Trying to create Build job"
                     jobDsl scriptText: """
                         multibranchPipelineJob("${PROJECT_NAME}/${PROJECT_NAME_FULL}") {
-                            description('Build job for devon4ng template.')
+                            description('Build job for ${PROJECT_NAME_FULL}.')
                             branchSources {
                                 git {
                                     remote('${ProductionLineGlobals.GITLAB_BASE_URL}/${params.GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git')
