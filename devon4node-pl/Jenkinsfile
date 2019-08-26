@@ -8,14 +8,9 @@ GitLab gitlabConfiguration;
 pipeline{
     agent any
 
-    tools {
-        nodejs "NodeJS LTS"
-    }
     //Jenkins Job Parameters
     parameters { 
-        // string(name: 'GITLAB_CREATE_PROJECT_NAME', defaultValue: 'devon4node', description: 'Name of the repository inside GitLab that will be created.') 
-        // string(name: 'GITLAB_CLONE_URL', defaultValue: '', description: 'Private Token of a Production Line Gitlab User that can be used to create repositories.') 
-        string(name: 'PROJECT_NAME', defaultValue: 'devonfw', description: 'Name of the project. The word "-frontend" will be appended.') 
+        string(name: 'PROJECT_NAME', defaultValue: 'devonfw', description: 'Name of the project. The word "-backend" will be appended.') 
         string(name: 'GROUP_ID', defaultValue: 'com.devonfw', description: 'The group id of the project.') 
         credentials(credentialType: 'com.dabsquared.gitlabjenkins.connection.GitLabApiTokenImpl', defaultValue: 'gitlab-api-token', description: 'NEEDS TO BE SET!. Private Token of a Production Line Gitlab User that can be used to create repositories.', name: 'GITLAB_USER_PRIVATE_TOKEN', required: true)
         string(name: 'GITLAB_CREATE_GROUP_NAME', defaultValue: 'devon', description: 'Name of the group that will be created inside GitLab to clone the repo.') 
@@ -24,7 +19,7 @@ pipeline{
     }
 
     environment {
-        PORT='3000'
+        NODE_VERSION = '10.16.0'
     }
     
     stages {
@@ -62,8 +57,8 @@ pipeline{
                     //Add nodejs
                     //public boolean addNodeJS_Version(String installName, String nodeJS_Version, String npmPackages="", String home="", long npmPackagesRefreshHours=100) {
                     println "Trying to install nodejs config"
-                    String installName = "NodeJS 10.16.0"
-                    String nodeJS_Version = "10.16.0"
+                    String installName = "NodeJS ${NODE_VERSION}"
+                    String nodeJS_Version = "${NODE_VERSION}"
                     String npmPackages = "yarn"
                     String home = ""
                     long npmPackagesRefreshHours = 100
@@ -153,7 +148,7 @@ fi
                 }
             }
             environment {
-                NODE_TAG='10.16'
+                PORT='3000'
                 CPU='100m'
                 MEMORY='200Mi'
             }
@@ -184,9 +179,9 @@ fi
                             }
 
                             // Create environments for dev, uat and prod
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=release", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
-                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-prod", "-p", "NODE_TAG=${NODE_TAG}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=production", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-dev", "-p", "NODE_TAG=${NODE_VERSION}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=latest", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-uat", "-p", "NODE_TAG=${NODE_VERSION}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=release", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
+                            openshift.create( openshift.process( '', '-f', 'devon4node.yaml', "-p", "APPLICATION_NAME=${PROJECT_NAME_FULL}", "-p", "APPLICATION_GROUP_NAME=${params.PROJECT_NAME}", "-p", "APPLICATION_NAME_SUFFIX=-prod", "-p", "NODE_TAG=${NODE_VERSION}", "-p", "DOCKER_IMAGE=docker-registry-${env.PL_URL}/${PROJECT_NAME_FULL}", "-p", "DOCKER_TAG=production", "-p", "SECRET=${env.SECRET_NAME}", "-p", "CPU=${CPU}", "-p", "MEMORY=${MEMORY}", "-p", "PORT=${PORT}"  ) )
                         }
                     }
                 }
@@ -212,7 +207,7 @@ fi
                     }
                     //Check if project already exists
                     println "Trying co create Gitlab project"
-                    if(gitlabConfiguration.getProjectId(params.GITLAB_CREATE_GROUP_NAME, params.GITLAB_CREATE_PROJECT_NAME) == ""){
+                    if(gitlabConfiguration.getProjectId(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL) == ""){
                         println "No project with the same name exists yet, trying to create"
                         //Create a new public repository for Devon4node in the Production Line
                         gitlabConfiguration.createProject(
@@ -273,18 +268,28 @@ fi
             }
         }   
         stage('Install nestjs/cli & cicdgen') {
+            tools {
+                nodejs "NodeJS ${NODE_VERSION}"
+            }
             steps{
-             cleanWs()
-             deleteDir()
+                cleanWs()
+                deleteDir()
+                
                 sh 'npm i -g @nestjs/cli @devonfw/cicdgen'
             }
         }     
         stage('nest new') {
+            tools {
+                nodejs "NodeJS ${NODE_VERSION}"
+            }
             steps{
                 sh "nest new ${PROJECT_NAME_FULL} -s -p yarn"
             }
         }       
         stage('Create cicdgen Node template') {
+            tools {
+                nodejs "NodeJS ${NODE_VERSION}"
+            }
             steps{
                 script{ 
                     def dockerString = ''
@@ -301,7 +306,7 @@ fi
                     dir(PROJECT_NAME_FULL){
                         sh 'git config user.email "jenkins-pl@capgemini.com"'
                         sh 'git config user.name "Jenkins"'
-                        sh "cicdgen generate devon4node ${ocString}${dockerString}--groupid com.devonfw"
+                        sh "cicdgen generate devon4node ${ocString}${dockerString}--groupid ${params.GROUP_ID}"
                     }
                 }
             }
@@ -312,7 +317,14 @@ fi
                     dir(PROJECT_NAME_FULL){
                         def token = jenkinsConfiguration.gitlabApiToken(GITLAB_USER_PRIVATE_TOKEN);
                         sh "git status && git remote add origin http://oauth2:${token}@gitlab-core:80/gitlab/${GITLAB_CREATE_GROUP_NAME}/${PROJECT_NAME_FULL}.git"
-                        sh "git checkout -b develop && git push --set-upstream origin develop"
+                        sh "git checkout -b develop"
+                        
+                        // modify poms with the correct version for develop: 0.0.1
+                        def packageJson = readJSON file: 'package.json'
+                        packageJson.version = '0.0.1'
+                        writeJSON file: 'package.json', json: packageJson, pretty: 2
+                        
+                        sh """git add . && git commit -m "start 0.0.1 version" && git push --set-upstream origin develop"""
                         sh "git checkout master && git push origin master"
                         gitlabConfiguration.protectBranches(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "master", "40", "30");
                         gitlabConfiguration.unprotectBranch(params.GITLAB_CREATE_GROUP_NAME, PROJECT_NAME_FULL, "develop");
