@@ -175,7 +175,7 @@ fi
 
                     env.SECRET_NAME = "docker-registry-" + env.PL_URL.split("\\.")[0]
 
-                    openshift.withCluster('default'){
+                    openshift.withCluster(env.OC_NAME){
                         openshift.withProject(env.OC_PROJECT) {
                             // Create secret if not exist
                             def secret = openshift.selector('secret', "${env.SECRET_NAME}")
